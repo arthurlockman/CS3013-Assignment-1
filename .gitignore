@@ -26,3 +26,10 @@
 *.exe
 *.out
 *.app
+
+.vagrant/*
+myfork
+myexec
+doit
+*.pyc
+.ycm*

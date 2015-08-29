@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 apt-get update
-apt-get install g++
+apt-get --assume-yes install g++
