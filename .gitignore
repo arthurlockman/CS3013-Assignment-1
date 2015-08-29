@@ -33,3 +33,4 @@ myexec
 doit
 *.pyc
 .ycm*
+*.swp
