@@ -66,11 +66,20 @@ int main(int argc, char **argv)
             istringstream is(cmd);
             string part;
             int arg = 0;
+            int bg = 0;
             while (getline(is, part, ' '))
             {
                 char *cstr = strdup(part.c_str());
-                argvNew[arg] = cstr;
-                arg++;
+                if (strncmp(cstr, "&", 1) == 0)
+                {
+                    cout << "Background requested." << endl;
+                    bg = 1;
+                }
+                else
+                {
+                    argvNew[arg] = cstr;
+                    arg++;
+                }
             }
             argvNew[arg] = NULL;
             if (strncmp(argvNew[0], "exit", 4) == 0)
@@ -85,9 +94,22 @@ int main(int argc, char **argv)
                     cerr << "Error changing directory!" << endl;
                 }
             }
+            else if (strncmp(argvNew[0], "jobs", 4) == 0)
+            {
+                if (running == 0)
+                {
+                    cout << "No jobs running." << endl;
+                }
+                else
+                {
+                    for (int i = 0; i < running; i++)
+                    {
+                        cout << "[" << i + 1 << "] " << children[i].pid << " " << children[i].command << endl;
+                    }
+                }
+            }
             else
             {
-                //TODO: Check for ampersand for background process
                 int pid;
                 if ((pid = fork()) < 0) //fork failed
                 {
@@ -105,9 +127,15 @@ int main(int argc, char **argv)
                 {
                     children[running].command = cmd;
                     children[running].pid = pid;
-                    running++;
-                    //TODO: only wait if process isn't backgrounded
-                    wait(0);
+                    if (bg != 1)
+                    {
+                        wait(0);
+                    }
+                    else
+                    {
+                        cout << "[" << running + 1 << "] " << children[running].pid << " " << children[running].command << endl;
+                        running++;
+                    }
                     //TODO: Does this need to print stats?
                 }
             }
