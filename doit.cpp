@@ -16,12 +16,14 @@
 #include <string.h>
 #include <sstream>
 #include <pwd.h>
+#include <vector>
 
 using namespace std;
 typedef struct
 {
     int pid;
     string command;
+    long startTime;
 } process;
 
 /**
@@ -43,13 +45,47 @@ int main(int argc, char **argv)
     {
         cout << "Executing as shell..." << endl;
         int halt = 0;
-        int running = 0;
-        process children[100];
+        vector<process> children;
 
         while (!halt)
         {
-            for (int i = 0; i < running; i++)
+            for (unsigned long i = 0; i < children.size(); i++)
             {
+                int procStatus;
+                pid_t result = waitpid(children.at(i).pid, &procStatus, WNOHANG);
+                if (result == 0) //Child running
+                {
+                }
+                else if (result < 0) //Error
+                {
+                }
+                else //Child quit
+                {
+                    cout << "[" << i + 1 << "] " << children.at(i).pid << " " << children.at(i).command << " [Finished]" << endl;
+                    struct rusage childUsage;
+                    struct timeval end;
+                    gettimeofday(&end, NULL);
+                    long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
+                    getrusage(RUSAGE_CHILDREN, &childUsage);
+                    printStat("Wall Clock Time:", end_ms - children.at(i).startTime);
+                    printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
+                    printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
+                    printStat("Max RSS:", childUsage.ru_maxrss);
+                    printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
+                    printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
+                    printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
+                    printStat("Page Reclaims:", childUsage.ru_minflt);
+                    printStat("Page Faults:", childUsage.ru_majflt);
+                    printStat("Swaps:", childUsage.ru_nswap);
+                    printStat("Block Input Operations:", childUsage.ru_inblock);
+                    printStat("Block Output Operations:", childUsage.ru_oublock);
+                    printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
+                    printStat("IPC Messages Received:", childUsage.ru_msgrcv);
+                    printStat("Signals Received:", childUsage.ru_nsignals);
+                    printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
+                    printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
+                    children.erase(children.begin() + i);
+                }
                 //TODO: Check any child processes, find if any are dead (http://stackoverflow.com/questions/5278582/checking-the-status-of-a-child-process-in-c)
             }
             struct passwd *passwd;
@@ -67,76 +103,144 @@ int main(int argc, char **argv)
             string part;
             int arg = 0;
             int bg = 0;
-            while (getline(is, part, ' '))
+            if (cmd.length() >= 1)
             {
-                char *cstr = strdup(part.c_str());
-                if (strncmp(cstr, "&", 1) == 0)
+                while (getline(is, part, ' '))
                 {
-                    cout << "Background requested." << endl;
-                    bg = 1;
-                }
-                else
-                {
-                    argvNew[arg] = cstr;
-                    arg++;
-                }
-            }
-            argvNew[arg] = NULL;
-            if (strncmp(argvNew[0], "exit", 4) == 0)
-            {
-                exit(0);
-            }
-            else if (strncmp(argvNew[0], "cd", 2) == 0)
-            {
-                int result = chdir(argvNew[1]);
-                if (result < 0)
-                {
-                    cerr << "Error changing directory!" << endl;
-                }
-            }
-            else if (strncmp(argvNew[0], "jobs", 4) == 0)
-            {
-                if (running == 0)
-                {
-                    cout << "No jobs running." << endl;
-                }
-                else
-                {
-                    for (int i = 0; i < running; i++)
+                    char *cstr = strdup(part.c_str());
+                    if (strncmp(cstr, "&", 1) == 0)
                     {
-                        cout << "[" << i + 1 << "] " << children[i].pid << " " << children[i].command << endl;
-                    }
-                }
-            }
-            else
-            {
-                int pid;
-                if ((pid = fork()) < 0) //fork failed
-                {
-                    cerr << "Fork error!" << endl;
-                }
-                else if (pid == 0) //is child
-                {
-                    if (execvp(argvNew[0], argvNew) < 0)
-                    {
-                        cerr << "Execvp error!" << endl;
-                        exit(1);
-                    }
-                }
-                else //is parent
-                {
-                    children[running].command = cmd;
-                    children[running].pid = pid;
-                    if (bg != 1)
-                    {
-                        wait(0);
+                        cout << "Background requested." << endl;
+                        bg = 1;
                     }
                     else
                     {
-                        cout << "[" << running + 1 << "] " << children[running].pid << " " << children[running].command << endl;
-                        running++;
+                        argvNew[arg] = cstr;
+                        arg++;
                     }
-                    //TODO: Does this need to print stats?
+                }
+                argvNew[arg] = NULL;
+                if (strncmp(argvNew[0], "exit", 4) == 0)
+                {
+                    if (children.size() > 0)
+                    {
+                        cout << "Waiting for background processes to complete..." << endl;
+                        for (unsigned long i = 0; i < children.size(); i++)
+                        {
+                            int procStatus;
+                            pid_t result = waitpid(children.at(i).pid, &procStatus, 0);
+                            if (result == 0) //Child running
+                            {
+                            }
+                            else if (result < 0) //Error
+                            {
+                            }
+                            else //Child quit
+                            {
+                                cout << "[" << i + 1 << "] " << children.at(i).pid << " " << children.at(i).command << " [Finished]" << endl;
+                                struct rusage childUsage;
+                                struct timeval end;
+                                gettimeofday(&end, NULL);
+                                long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
+                                getrusage(RUSAGE_CHILDREN, &childUsage);
+                                printStat("Wall Clock Time:", end_ms - children.at(i).startTime);
+                                printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
+                                printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
+                                printStat("Max RSS:", childUsage.ru_maxrss);
+                                printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
+                                printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
+                                printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
+                                printStat("Page Reclaims:", childUsage.ru_minflt);
+                                printStat("Page Faults:", childUsage.ru_majflt);
+                                printStat("Swaps:", childUsage.ru_nswap);
+                                printStat("Block Input Operations:", childUsage.ru_inblock);
+                                printStat("Block Output Operations:", childUsage.ru_oublock);
+                                printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
+                                printStat("IPC Messages Received:", childUsage.ru_msgrcv);
+                                printStat("Signals Received:", childUsage.ru_nsignals);
+                                printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
+                                printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
+                                children.erase(children.begin() + i);
+                            }
+                        }
+                    }
+                    exit(0);
+                }
+                else if (strncmp(argvNew[0], "cd", 2) == 0)
+                {
+                    int result = chdir(argvNew[1]);
+                    if (result < 0)
+                    {
+                        cerr << "Error changing directory!" << endl;
+                    }
+                }
+                else if (strncmp(argvNew[0], "jobs", 4) == 0)
+                {
+                    if (children.size() == 0)
+                    {
+                        cout << "No jobs running." << endl;
+                    }
+                    else
+                    {
+                        for (unsigned long i = 0; i < children.size(); i++)
+                        {
+                            cout << "[" << i + 1 << "] " << children[i].pid << " " << children[i].command << endl;
+                        }
+                    }
+                }
+                else
+                {
+                    int pid;
+                    struct timeval start;
+                    gettimeofday(&start, NULL);
+                    long start_ms = start.tv_sec * 1000 + start.tv_usec / 1000;
+                    if ((pid = fork()) < 0) //fork failed
+                    {
+                        cerr << "Fork error!" << endl;
+                    }
+                    else if (pid == 0) //is child
+                    {
+                        if (execvp(argvNew[0], argvNew) < 0)
+                        {
+                            cerr << "Execvp error!" << endl;
+                            exit(1);
+                        }
+                    }
+                    else //is parent
+                    {
+                        if (bg != 1)
+                        {
+                            struct rusage childUsage;
+                            wait(0);
+                            struct timeval end;
+                            gettimeofday(&end, NULL);
+                            long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
+                            getrusage(RUSAGE_CHILDREN, &childUsage);
+                            printStat("Wall Clock Time:", end_ms - start_ms);
+                            printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
+                            printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
+                            printStat("Max RSS:", childUsage.ru_maxrss);
+                            printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
+                            printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
+                            printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
+                            printStat("Page Reclaims:", childUsage.ru_minflt);
+                            printStat("Page Faults:", childUsage.ru_majflt);
+                            printStat("Swaps:", childUsage.ru_nswap);
+                            printStat("Block Input Operations:", childUsage.ru_inblock);
+                            printStat("Block Output Operations:", childUsage.ru_oublock);
+                            printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
+                            printStat("IPC Messages Received:", childUsage.ru_msgrcv);
+                            printStat("Signals Received:", childUsage.ru_nsignals);
+                            printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
+                            printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
+                        }
+                        else
+                        {
+                            process proc = {pid, cmd, start_ms};
+                            children.push_back(proc);
+                            cout << "[" << children.size() << "] " << children.back().pid << " " << children.back().command << endl;
+                        }
+                    }
                 }
             }
         }
@@ -170,7 +274,6 @@ int main(int argc, char **argv)
         {
             struct rusage childUsage;
             wait(0);
-            cout << endl << "Child finished." << endl;
             struct timeval end;
             gettimeofday(&end, NULL);
             long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
