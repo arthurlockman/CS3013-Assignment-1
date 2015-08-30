@@ -13,8 +13,16 @@
 #include <sys/resource.h>
 #include <iomanip>
 #include <time.h>
+#include <string.h>
+#include <sstream>
+#include <pwd.h>
 
 using namespace std;
+typedef struct
+{
+    int pid;
+    string command;
+} process;
 
 /**
  * Print a stat returned from the getrusage() function.
@@ -35,28 +43,73 @@ int main(int argc, char **argv)
     {
         cout << "Executing as shell..." << endl;
         int halt = 0;
+        int running = 0;
+        process children[100];
+
         while (!halt)
         {
-            cout << "% ";
+            for (int i = 0; i < running; i++)
+            {
+                //TODO: Check any child processes, find if any are dead (http://stackoverflow.com/questions/5278582/checking-the-status-of-a-child-process-in-c)
+            }
+            struct passwd *passwd;
+            passwd = getpwuid(getuid());
+            char hostname[128];
+            gethostname(hostname, sizeof hostname);
+            char currentpath[256];
+            getcwd(currentpath, sizeof currentpath);
+            cout << passwd->pw_name << "@" << hostname << ":" << currentpath << "$ ";
+
+            char *argvNew[32];
             string cmd;
             getline(cin, cmd);
-            cout << "Read: " << cmd << endl;
-            if (cmd == "exit")
-                halt = 1;
-            //TODO: Parse commands
-            int pid;
-            if ((pid = fork()) < 0) //fork failed
+            istringstream is(cmd);
+            string part;
+            int arg = 0;
+            while (getline(is, part, ' '))
             {
-                cerr << "Fork error!" << endl;
+                char *cstr = strdup(part.c_str());
+                argvNew[arg] = cstr;
+                arg++;
             }
-            else if (pid == 0) //is child
+            argvNew[arg] = NULL;
+            if (strncmp(argvNew[0], "exit", 4) == 0)
             {
-                //TODO: exec parsed process
+                exit(0);
             }
-            else //is parent
+            else if (strncmp(argvNew[0], "cd", 2) == 0)
             {
-                wait(0);
-                //TODO: Does this need to print stats?
+                int result = chdir(argvNew[1]);
+                if (result < 0)
+                {
+                    cerr << "Error changing directory!" << endl;
+                }
+            }
+            else
+            {
+                //TODO: Check for ampersand for background process
+                int pid;
+                if ((pid = fork()) < 0) //fork failed
+                {
+                    cerr << "Fork error!" << endl;
+                }
+                else if (pid == 0) //is child
+                {
+                    if (execvp(argvNew[0], argvNew) < 0)
+                    {
+                        cerr << "Execvp error!" << endl;
+                        exit(1);
+                    }
+                }
+                else //is parent
+                {
+                    children[running].command = cmd;
+                    children[running].pid = pid;
+                    running++;
+                    //TODO: only wait if process isn't backgrounded
+                    wait(0);
+                    //TODO: Does this need to print stats?
+                }
             }
         }
     }
