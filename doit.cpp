@@ -34,7 +34,31 @@ int main(int argc, char **argv)
     if (argc == 1)
     {
         cout << "Executing as shell..." << endl;
-        //Exec as shell
+        int halt = 0;
+        while (!halt)
+        {
+            cout << "% ";
+            string cmd;
+            getline(cin, cmd);
+            cout << "Read: " << cmd << endl;
+            if (cmd == "exit")
+                halt = 1;
+            //TODO: Parse commands
+            int pid;
+            if ((pid = fork()) < 0) //fork failed
+            {
+                cerr << "Fork error!" << endl;
+            }
+            else if (pid == 0) //is child
+            {
+                //TODO: exec parsed process
+            }
+            else //is parent
+            {
+                wait(0);
+                //TODO: Does this need to print stats?
+            }
+        }
     }
     else if (argc > 1)
     {
@@ -65,14 +89,14 @@ int main(int argc, char **argv)
         {
             struct rusage childUsage;
             wait(0);
-            cout << "Child finished." << endl;
+            cout << endl << "Child finished." << endl;
             struct timeval end;
             gettimeofday(&end, NULL);
             long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
             getrusage(RUSAGE_CHILDREN, &childUsage);
-            printStat("Wall Clock Time:", end_ms - start_ms); 
-            printStat("User CPU Time:", 345678);
-            printStat("System CPU Time:", 134134);
+            printStat("Wall Clock Time:", end_ms - start_ms);
+            printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
+            printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
             printStat("Max RSS:", childUsage.ru_maxrss);
             printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
             printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
