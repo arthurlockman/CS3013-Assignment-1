@@ -35,6 +35,35 @@ void printStat(char const *stat, long val)
 }
 
 /**
+ * Print out process stats.
+ */
+void printProcStats(long start_ms)
+{
+    struct rusage childUsage;
+    struct timeval end;
+    gettimeofday(&end, NULL);
+    long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
+    getrusage(RUSAGE_CHILDREN, &childUsage);
+    printStat("Wall Clock Time:", end_ms - start_ms);
+    printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
+    printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
+    printStat("Max RSS:", childUsage.ru_maxrss);
+    printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
+    printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
+    printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
+    printStat("Page Reclaims:", childUsage.ru_minflt);
+    printStat("Page Faults:", childUsage.ru_majflt);
+    printStat("Swaps:", childUsage.ru_nswap);
+    printStat("Block Input Operations:", childUsage.ru_inblock);
+    printStat("Block Output Operations:", childUsage.ru_oublock);
+    printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
+    printStat("IPC Messages Received:", childUsage.ru_msgrcv);
+    printStat("Signals Received:", childUsage.ru_nsignals);
+    printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
+    printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
+}
+
+/**
  * Main function.
  * @param argc The argument count.
  * @param argv The arguments as text.
@@ -62,28 +91,7 @@ int main(int argc, char **argv)
                 else //Child quit
                 {
                     cout << "[" << i + 1 << "] " << children.at(i).pid << " " << children.at(i).command << " [Finished]" << endl;
-                    struct rusage childUsage;
-                    struct timeval end;
-                    gettimeofday(&end, NULL);
-                    long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
-                    getrusage(RUSAGE_CHILDREN, &childUsage);
-                    printStat("Wall Clock Time:", end_ms - children.at(i).startTime);
-                    printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
-                    printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
-                    printStat("Max RSS:", childUsage.ru_maxrss);
-                    printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
-                    printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
-                    printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
-                    printStat("Page Reclaims:", childUsage.ru_minflt);
-                    printStat("Page Faults:", childUsage.ru_majflt);
-                    printStat("Swaps:", childUsage.ru_nswap);
-                    printStat("Block Input Operations:", childUsage.ru_inblock);
-                    printStat("Block Output Operations:", childUsage.ru_oublock);
-                    printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
-                    printStat("IPC Messages Received:", childUsage.ru_msgrcv);
-                    printStat("Signals Received:", childUsage.ru_nsignals);
-                    printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
-                    printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
+                    printProcStats(children.at(i).startTime);
                     children.erase(children.begin() + i);
                 }
                 //TODO: Check any child processes, find if any are dead (http://stackoverflow.com/questions/5278582/checking-the-status-of-a-child-process-in-c)
@@ -138,28 +146,7 @@ int main(int argc, char **argv)
                             else //Child quit
                             {
                                 cout << "[" << i + 1 << "] " << children.at(i).pid << " " << children.at(i).command << " [Finished]" << endl;
-                                struct rusage childUsage;
-                                struct timeval end;
-                                gettimeofday(&end, NULL);
-                                long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
-                                getrusage(RUSAGE_CHILDREN, &childUsage);
-                                printStat("Wall Clock Time:", end_ms - children.at(i).startTime);
-                                printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
-                                printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
-                                printStat("Max RSS:", childUsage.ru_maxrss);
-                                printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
-                                printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
-                                printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
-                                printStat("Page Reclaims:", childUsage.ru_minflt);
-                                printStat("Page Faults:", childUsage.ru_majflt);
-                                printStat("Swaps:", childUsage.ru_nswap);
-                                printStat("Block Input Operations:", childUsage.ru_inblock);
-                                printStat("Block Output Operations:", childUsage.ru_oublock);
-                                printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
-                                printStat("IPC Messages Received:", childUsage.ru_msgrcv);
-                                printStat("Signals Received:", childUsage.ru_nsignals);
-                                printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
-                                printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
+                                printProcStats(children.at(i).startTime);
                                 children.erase(children.begin() + i);
                             }
                         }
@@ -210,29 +197,8 @@ int main(int argc, char **argv)
                     {
                         if (bg != 1)
                         {
-                            struct rusage childUsage;
                             wait(0);
-                            struct timeval end;
-                            gettimeofday(&end, NULL);
-                            long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
-                            getrusage(RUSAGE_CHILDREN, &childUsage);
-                            printStat("Wall Clock Time:", end_ms - start_ms);
-                            printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
-                            printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
-                            printStat("Max RSS:", childUsage.ru_maxrss);
-                            printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
-                            printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
-                            printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
-                            printStat("Page Reclaims:", childUsage.ru_minflt);
-                            printStat("Page Faults:", childUsage.ru_majflt);
-                            printStat("Swaps:", childUsage.ru_nswap);
-                            printStat("Block Input Operations:", childUsage.ru_inblock);
-                            printStat("Block Output Operations:", childUsage.ru_oublock);
-                            printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
-                            printStat("IPC Messages Received:", childUsage.ru_msgrcv);
-                            printStat("Signals Received:", childUsage.ru_nsignals);
-                            printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
-                            printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
+                            printProcStats(start_ms);
                         }
                         else
                         {
@@ -272,30 +238,8 @@ int main(int argc, char **argv)
         }
         else //is parent
         {
-            struct rusage childUsage;
             wait(0);
-            struct timeval end;
-            gettimeofday(&end, NULL);
-            long end_ms = end.tv_sec * 1000 + end.tv_usec / 1000;
-            getrusage(RUSAGE_CHILDREN, &childUsage);
-            printStat("Wall Clock Time:", end_ms - start_ms);
-            printStat("User CPU Time:", childUsage.ru_utime.tv_sec * 1000 + childUsage.ru_utime.tv_usec / 1000);
-            printStat("System CPU Time:", childUsage.ru_stime.tv_sec * 1000 + childUsage.ru_stime.tv_usec / 1000);
-            printStat("Max RSS:", childUsage.ru_maxrss);
-            printStat("Integral Shared Memory Size:", childUsage.ru_ixrss);
-            printStat("Integral Unshared Data Size:", childUsage.ru_idrss);
-            printStat("Integral Unshared Stack Size:", childUsage.ru_isrss);
-            printStat("Page Reclaims:", childUsage.ru_minflt);
-            printStat("Page Faults:", childUsage.ru_majflt);
-            printStat("Swaps:", childUsage.ru_nswap);
-            printStat("Block Input Operations:", childUsage.ru_inblock);
-            printStat("Block Output Operations:", childUsage.ru_oublock);
-            printStat("IPC Messages Sent:", childUsage.ru_msgsnd);
-            printStat("IPC Messages Received:", childUsage.ru_msgrcv);
-            printStat("Signals Received:", childUsage.ru_nsignals);
-            printStat("Voluntary Context Switches:", childUsage.ru_nvcsw);
-            printStat("Involuntary Context Switches:", childUsage.ru_nivcsw);
-
+            printProcStats(start_ms);
         }
     }
 }
