@@ -1,0 +1,227 @@
+Script started on Thu 03 Sep 2015 11:48:15 PM UTC
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ./doit echo "hello, world!"
+hello, world!
+Wall Clock Time:                      0
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           1732
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                       81
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:           4
+Involuntary Context Switches:         2
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ./doit ls -alh
+total 104K
+drwxr-xr-x  1 vagrant vagrant  612 Sep  3 23:48 .
+drwxr-xr-x 23 root    root    4.0K Sep  3 18:36 ..
+-rw-r--r--  1 vagrant vagrant   69 Aug 29 02:24 bootstrap.sh
+-rwxr-xr-x  1 vagrant vagrant  40K Sep  3 22:57 doit
+-rw-r--r--  1 vagrant vagrant  14K Sep  3 23:47 doit.cpp
+drwxr-xr-x  1 vagrant vagrant  544 Sep  3 23:48 .git
+-rw-r--r--  1 vagrant vagrant  291 Aug 29 23:19 .gitignore
+-rw-r--r--  1 vagrant vagrant 1.1K Aug 28 17:38 LICENSE
+-rw-r--r--  1 vagrant vagrant   65 Sep  1 20:19 Makefile
+-rw-r--r--  1 vagrant vagrant  785 Aug 29 02:41 myexec.cpp
+-rw-r--r--  1 vagrant vagrant  840 Aug 29 02:34 myfork.cpp
+-rw-r--r--  1 vagrant vagrant 3.1K Sep  3 23:26 README.md
+drwxr-xr-x  1 vagrant vagrant   68 Sep  1 20:22 stuff
+-rw-r--r--  1 vagrant vagrant    0 Sep  3 23:48 typescript
+drwxr-xr-x  1 vagrant vagrant  102 Aug 28 18:18 .vagrant
+-rw-r--r--  1 vagrant vagrant  129 Aug 28 18:20 Vagrantfile
+-rw-r--r--  1 vagrant vagrant 6.6K Aug 29 02:34 .ycm_extra_conf.py
+-rw-r--r--  1 vagrant vagrant 3.6K Aug 29 02:34 .ycm_extra_conf.pyc
+Wall Clock Time:                      6
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           3092
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      162
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:          40
+Involuntary Context Switches:        38
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ./doit mkdir stuff stuff1 stuff2
+Wall Clock Time:                      1
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           2176
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      103
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:           9
+Involuntary Context Switches:         0
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ./doit ls
+bootstrap.sh  doit  doit.cpp  LICENSE  Makefile  myexec.cpp  myfork.cpp  README.md  stuff  stuff1  stuff2  typescript  Vagrantfile
+Wall Clock Time:                      1
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           2520
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      122
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:           7
+Involuntary Context Switches:         2
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ rmdir stuff stuff1 stuff2
+Wall Clock Time:                      1
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           1972
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                       83
+Page Faults:                          1
+Swaps:                                0
+Block Input Operations:              88
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:          11
+Involuntary Context Switches:         0
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ls
+bootstrap.sh  [0m[01;32mdoit[0m  doit.cpp  LICENSE  Makefile  myexec.cpp  myfork.cpp  README.md  typescript  Vagrantfile
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ./doit
+Executing as shell...
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ls
+bootstrap.sh  doit  doit.cpp  LICENSE  Makefile  myexec.cpp  myfork.cpp  README.md  typescript	Vagrantfile
+Wall Clock Time:                      2
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           2416
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      121
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:           8
+Involuntary Context Switches:         5
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ mkdir stuff
+Wall Clock Time:                      1
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           2416
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      226
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:          15
+Involuntary Context Switches:         6
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ sleep 5 &
+Background requested.
+[1] 2754 sleep 5 &
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ 
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ 
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ 
+[1] 2754 sleep 5 & [Finished]
+Wall Clock Time:                   5063
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           2416
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      309
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:          19
+Involuntary Context Switches:         7
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ sleep 5
+Wall Clock Time:                   5001
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           2416
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      389
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:          23
+Involuntary Context Switches:         9
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ sleep 10 &
+Background requested.
+[1] 2756 sleep 10 &
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ jobs
+[1] 2756 sleep 10 &
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ mkdir test_dir
+Wall Clock Time:                      0
+User CPU Time:                        0
+System CPU Time:                      0
+Max RSS:                           2416
+Integral Shared Memory Size:          0
+Integral Unshared Data Size:          0
+Integral Unshared Stack Size:         0
+Page Reclaims:                      470
+Page Faults:                          0
+Swaps:                                0
+Block Input Operations:               0
+Block Output Operations:              0
+IPC Messages Sent:                    0
+IPC Messages Received:                0
+Signals Received:                     0
+Voluntary Context Switches:          28
+Involuntary Context Switches:        10
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ cd test_dir
+vagrant@vagrant-ubuntu-vivid-64:/vagrant/test_dir$ cd ..
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ 
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ exit
+Waiting for background processes to complete...
+vagrant@vagrant-ubuntu-vivid-64:/vagrant$ exit
+exit
+
+Script done on Thu 03 Sep 2015 11:51:10 PM UTC

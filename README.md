@@ -1,6 +1,10 @@
 # WPI CS3013 - Assignment 1
 Assignment 1 for WPI CS3013.
 
+## Compiling
+
+Compilation can be done with the make command. Simply enter the directory and type <code>make</code>. To clean old builds, use <code>make clean</code>.
+
 ## Doit
 Doit is a basic shell that supports background tasks.
 
