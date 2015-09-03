@@ -67,5 +67,5 @@ To change directory in the shell, use the <code>cd</code> command.
     vagrant@vagrant-ubuntu-vivid-64:/vagrant$ cd stuff
     vagrant@vagrant-ubuntu-vivid-64:/vagrant/stuff$
 
-To exit the shell, use the <code>exit</code> command, or feed the shell and <code>EOF</code> character.
+To exit the shell, use the <code>exit</code> command.
 

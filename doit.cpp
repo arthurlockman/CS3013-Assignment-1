@@ -74,9 +74,22 @@
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant$ cd stuff
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant/stuff$
  * 
- * To exit the shell, use the <code>exit</code> command, or feed the 
- * shell and <code>EOF</code> character.
+ * To exit the shell, use the <code>exit</code> command.
  * 
+ *
+ * This shell is missing many of the functions and conveniences that normal
+ * shells have. For instance, this shell cannot immediately print statistics 
+ * for a background task when it actually finishes, something that zsh can 
+ * do. Zsh most likely uses pthreads to achieve that, which is outside
+ * of the scope of this project. Normal shells also have support for the 
+ * pipe (|) and directing output to files (>>), neither of which are supported
+ * by doit. The biggest feature missing (and most annoying) is the fact that 
+ * normal shells allow for users to cycle through previously input commands
+ * using the arrow keys. This shell does not support that. It also has a 
+ * fixed prompt line, whereas most other shells allow users to customize
+ * the prompt.
+ *
+ *
  * @author Arthur Lockman <ajlockman@wpi.edu>
  */
 
@@ -94,6 +107,11 @@
 #include <vector>
 
 using namespace std;
+/**
+ * This struct holds information about a running process. It holds
+ * the pid of the process, the command that was run, and the time
+ * (wall clock time) that the process was started at.
+ */
 typedef struct
 {
     int pid;
@@ -139,19 +157,24 @@ void printProcStats(long start_ms)
 }
 
 /**
- * Main function.
+ * This is the main function of the doit program. This function determines
+ * which mode to run the shell in, and then executes that mode. It does this
+ * by determining how many arguments the program has. If there is only one
+ * argument, then the user is attempting to run the program in shell mode. If 
+ * there are more than one, then the user wants the program to simply run the
+ * input command, print the stats, and then exit.
+ *
  * @param argc The argument count.
- * @param argv The arguments as text.
+ * @param argv Program arguments as a string.
  */
 int main(int argc, char **argv)
 {
     if (argc == 1)
     {
         cout << "Executing as shell..." << endl;
-        int halt = 0;
         vector<process> children;
 
-        while (!halt)
+        while (1)
         {
             for (unsigned long i = 0; i < children.size(); i++)
             {
@@ -171,6 +194,9 @@ int main(int argc, char **argv)
                 }
                 //TODO: Check any child processes, find if any are dead (http://stackoverflow.com/questions/5278582/checking-the-status-of-a-child-process-in-c)
             }
+            
+            //This section of code generates the prompt line. I wanted it to look like a standard shell prompt, so this extracts the 
+            //username, the hostname, and the currently running path and uses those to construct the prompt.
             struct passwd *passwd;
             passwd = getpwuid(getuid());
             char hostname[128];
@@ -178,17 +204,18 @@ int main(int argc, char **argv)
             char currentpath[256];
             getcwd(currentpath, sizeof currentpath);
             cout << passwd->pw_name << "@" << hostname << ":" << currentpath << "$ ";
-
+            
+            //Create an array of 32 commands to fit assignment spec
             char *argvNew[32];
             string cmd;
-            getline(cin, cmd);
-            istringstream is(cmd);
+            getline(cin, cmd); //Get a line of input from user
+            istringstream is(cmd); //Create stringstream for parsing into arguments
             string part;
             int arg = 0;
             int bg = 0;
             if (cmd.length() >= 1)
             {
-                while (getline(is, part, ' '))
+                while (getline(is, part, ' ')) //Using getline to parse string, delimited by space characters
                 {
                     char *cstr = strdup(part.c_str());
                     if (strncmp(cstr, "&", 1) == 0)
@@ -203,12 +230,12 @@ int main(int argc, char **argv)
                     }
                 }
                 argvNew[arg] = NULL;
-                if (strncmp(argvNew[0], "exit", 4) == 0)
+                if (strncmp(argvNew[0], "exit", 4) == 0) //parse out exit command
                 {
-                    if (children.size() > 0)
+                    if (children.size() > 0) //if there are any children left, wait for them to complete.
                     {
                         cout << "Waiting for background processes to complete..." << endl;
-                        for (unsigned long i = 0; i < children.size(); i++)
+                        for (unsigned long i = 0; i < children.size(); i++) //loop through children and wait each of them
                         {
                             int procStatus;
                             pid_t result = waitpid(children.at(i).pid, &procStatus, 0);
@@ -218,7 +245,7 @@ int main(int argc, char **argv)
                             else if (result < 0) //Error
                             {
                             }
-                            else //Child quit
+                            else //Child quit, print statistics
                             {
                                 cout << "[" << i + 1 << "] " << children.at(i).pid << " " << children.at(i).command << " [Finished]" << endl;
                                 printProcStats(children.at(i).startTime);
@@ -226,17 +253,17 @@ int main(int argc, char **argv)
                             }
                         }
                     }
-                    exit(0);
+                    exit(0); //terminate program
                 }
-                else if (strncmp(argvNew[0], "cd", 2) == 0)
+                else if (strncmp(argvNew[0], "cd", 2) == 0) //Parse out cd command
                 {
-                    int result = chdir(argvNew[1]);
+                    int result = chdir(argvNew[1]); //Change directory to first argument of cd command
                     if (result < 0)
                     {
                         cerr << "Error changing directory!" << endl;
                     }
                 }
-                else if (strncmp(argvNew[0], "jobs", 4) == 0)
+                else if (strncmp(argvNew[0], "jobs", 4) == 0) //Parse out jobs command
                 {
                     if (children.size() == 0)
                     {
@@ -244,7 +271,7 @@ int main(int argc, char **argv)
                     }
                     else
                     {
-                        for (unsigned long i = 0; i < children.size(); i++)
+                        for (unsigned long i = 0; i < children.size(); i++) //If there are any children, print out their names and information.
                         {
                             cout << "[" << i + 1 << "] " << children[i].pid << " " << children[i].command << endl;
                         }
@@ -255,7 +282,7 @@ int main(int argc, char **argv)
                     int pid;
                     struct timeval start;
                     gettimeofday(&start, NULL);
-                    long start_ms = start.tv_sec * 1000 + start.tv_usec / 1000;
+                    long start_ms = start.tv_sec * 1000 + start.tv_usec / 1000; //Calculate start time
                     if ((pid = fork()) < 0) //fork failed
                     {
                         cerr << "Fork error!" << endl;
@@ -270,7 +297,7 @@ int main(int argc, char **argv)
                     }
                     else //is parent
                     {
-                        if (bg != 1)
+                        if (bg != 1) //if not requested to be backgrounded, wait for process and then print stats.
                         {
                             wait(0);
                             printProcStats(start_ms);
@@ -278,20 +305,20 @@ int main(int argc, char **argv)
                         else
                         {
                             process proc = {pid, cmd, start_ms};
-                            children.push_back(proc);
-                            cout << "[" << children.size() << "] " << children.back().pid << " " << children.back().command << endl;
+                            children.push_back(proc); //Add new process to list of jobs.
+                            cout << "[" << children.size() << "] " << children.back().pid << " " << children.back().command << endl; //Print that child has started.
                         }
                     }
                 }
             }
         }
     }
-    else if (argc > 1)
+    else if (argc > 1) //Execute input command and quit
     {
         int pid;
         struct timeval start;
         gettimeofday(&start, NULL);
-        long start_ms = start.tv_sec * 1000 + start.tv_usec / 1000;
+        long start_ms = start.tv_sec * 1000 + start.tv_usec / 1000; //calculate start time of child
         //Exec given command
         if ((pid = fork()) < 0) //fork failed
         {
@@ -300,11 +327,11 @@ int main(int argc, char **argv)
         else if (pid == 0)   //is child
         {
             char *argvNew[argc];
-            for (int i = 1; i < argc; i++)
+            for (int i = 1; i < argc; i++) //Copies argv into a new array without ./doit to feed into exec
             {
                 argvNew[i - 1] = argv[i];
             }
-            argvNew[argc - 1] = NULL;
+            argvNew[argc - 1] = NULL; //argv must be null terminated
             if (execvp(argvNew[0], argvNew) < 0)
             {
                 cerr << "Execvp error!" << endl;
@@ -313,7 +340,7 @@ int main(int argc, char **argv)
         }
         else //is parent
         {
-            wait(0);
+            wait(0); //wait for child to finish before printing stats
             printProcStats(start_ms);
         }
     }
