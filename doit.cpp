@@ -1,14 +1,14 @@
 /**
  * Doit.cpp
  * Doit is a basic shell that supports background tasks.
- * 
+ *
  * Doit can be run in two modes. Simply calling <code>./doit [command]</code>
- * with a command will execute that command and then exit. When it exits, 
- * it will print statistics about the command that was just run. An example 
+ * with a command will execute that command and then exit. When it exits,
+ * it will print statistics about the command that was just run. An example
  * is given below:
- * 
+ *
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant$ ./doit ls
- *     bootstrap.sh  doit  doit.cpp  LICENSE  Makefile  myexec.cpp 
+ *     bootstrap.sh  doit  doit.cpp  LICENSE  Makefile  myexec.cpp
  *     Wall Clock Time:                      1
  *     User CPU Time:                        0
  *     System CPU Time:                      0
@@ -26,30 +26,30 @@
  *     Signals Received:                     0
  *     Voluntary Context Switches:           8
  *     Involuntary Context Switches:         2
- * 
- * The second mode for doit is to run as a very basic shell. Executing 
+ *
+ * The second mode for doit is to run as a very basic shell. Executing
  * <code>./doit</code> will bring up a standard-looking command prompt:
- * 
+ *
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant$
- * 
- * From there you can interact with doit like you would any standard 
- * shell, with the caveat that many shell functions (pipes, >>, etc.) 
- * will not work. Doit will run any command, and allows backgrounding 
- * of those commands as well by adding an ampersand (&) to the end of 
+ *
+ * From there you can interact with doit like you would any standard
+ * shell, with the caveat that many shell functions (pipes, >>, etc.)
+ * will not work. Doit will run any command, and allows backgrounding
+ * of those commands as well by adding an ampersand (&) to the end of
  * a command line, as shown below.
- * 
+ *
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant$ sleep 10 &
  *     Background requested.
  *     [1] 2357 sleep 10 &
- * 
+ *
  * To get a list of currently executing jobs, use the <code>jobs</code> command.
- * 
+ *
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant$ jobs
  *     [1] 2357 sleep 10 &
- * 
- * When a job completes, the command line will print the statistics for the 
+ *
+ * When a job completes, the command line will print the statistics for the
  * completed job. This works for both foreground and background jobs.
- * 
+ *
  *     [1] 2357 sleep 10 & [Finished]
  *     Wall Clock Time:                  66286
  *     User CPU Time:                        0
@@ -68,24 +68,24 @@
  *     Signals Received:                     0
  *     Voluntary Context Switches:           9
  *     Involuntary Context Switches:         6
- * 
+ *
  * To change directory in the shell, use the <code>cd</code> command.
- * 
+ *
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant$ cd stuff
  *     vagrant@vagrant-ubuntu-vivid-64:/vagrant/stuff$
- * 
+ *
  * To exit the shell, use the <code>exit</code> command.
- * 
+ *
  *
  * This shell is missing many of the functions and conveniences that normal
- * shells have. For instance, this shell cannot immediately print statistics 
- * for a background task when it actually finishes, something that zsh can 
+ * shells have. For instance, this shell cannot immediately print statistics
+ * for a background task when it actually finishes, something that zsh can
  * do. Zsh most likely uses pthreads to achieve that, which is outside
- * of the scope of this project. Normal shells also have support for the 
+ * of the scope of this project. Normal shells also have support for the
  * pipe (|) and directing output to files (>>), neither of which are supported
- * by doit. The biggest feature missing (and most annoying) is the fact that 
+ * by doit. The biggest feature missing (and most annoying) is the fact that
  * normal shells allow for users to cycle through previously input commands
- * using the arrow keys. This shell does not support that. It also has a 
+ * using the arrow keys. This shell does not support that. It also has a
  * fixed prompt line, whereas most other shells allow users to customize
  * the prompt. Finally, it does not allow me to cd to ~ to get to my home
  * directory, which other shells usually allow.
@@ -158,10 +158,39 @@ void printProcStats(long start_ms)
 }
 
 /**
+ * This function handles shutting down the shell. It waits for all
+ * background tasks to complete and then exits gracefully.
+ */
+void shutdown(vector<process> *children)
+{
+    if (children->size() > 0) //if there are any children left, wait for them to complete.
+    {
+        cout << "Waiting for background processes to complete..." << endl;
+        for (unsigned long i = 0; i < children->size(); i++) //loop through children and wait each of them
+        {
+            int procStatus;
+            pid_t result = waitpid(children->at(i).pid, &procStatus, 0);
+            if (result == 0) //Child running
+            {
+            }
+            else if (result < 0) //Error
+            {
+            }
+            else //Child quit, print statistics
+            {
+                cout << "[" << i + 1 << "] " << children->at(i).pid << " " << children->at(i).command << " [Finished]" << endl;
+                printProcStats(children->at(i).startTime);
+            }
+        }
+    }
+    exit(0); //terminate program
+}
+
+/**
  * This is the main function of the doit program. This function determines
  * which mode to run the shell in, and then executes that mode. It does this
  * by determining how many arguments the program has. If there is only one
- * argument, then the user is attempting to run the program in shell mode. If 
+ * argument, then the user is attempting to run the program in shell mode. If
  * there are more than one, then the user wants the program to simply run the
  * input command, print the stats, and then exit.
  *
@@ -195,8 +224,8 @@ int main(int argc, char **argv)
                 }
                 //TODO: Check any child processes, find if any are dead (http://stackoverflow.com/questions/5278582/checking-the-status-of-a-child-process-in-c)
             }
-            
-            //This section of code generates the prompt line. I wanted it to look like a standard shell prompt, so this extracts the 
+
+            //This section of code generates the prompt line. I wanted it to look like a standard shell prompt, so this extracts the
             //username, the hostname, and the currently running path and uses those to construct the prompt.
             struct passwd *passwd;
             passwd = getpwuid(getuid());
@@ -205,11 +234,19 @@ int main(int argc, char **argv)
             char currentpath[256];
             getcwd(currentpath, sizeof currentpath);
             cout << passwd->pw_name << "@" << hostname << ":" << currentpath << "$ ";
-            
+
             //Create an array of 32 commands to fit assignment spec
             char *argvNew[32];
             string cmd;
             getline(cin, cmd); //Get a line of input from user
+            if (!cin)
+            {
+                if (cin.eof())
+                {
+                    cout << "Got EOF, exiting..." << endl;
+                    shutdown(&children);
+                }
+            }
             istringstream is(cmd); //Create stringstream for parsing into arguments
             string part;
             int arg = 0;
@@ -233,28 +270,7 @@ int main(int argc, char **argv)
                 argvNew[arg] = NULL;
                 if (strncmp(argvNew[0], "exit", 4) == 0) //parse out exit command
                 {
-                    if (children.size() > 0) //if there are any children left, wait for them to complete.
-                    {
-                        cout << "Waiting for background processes to complete..." << endl;
-                        for (unsigned long i = 0; i < children.size(); i++) //loop through children and wait each of them
-                        {
-                            int procStatus;
-                            pid_t result = waitpid(children.at(i).pid, &procStatus, 0);
-                            if (result == 0) //Child running
-                            {
-                            }
-                            else if (result < 0) //Error
-                            {
-                            }
-                            else //Child quit, print statistics
-                            {
-                                cout << "[" << i + 1 << "] " << children.at(i).pid << " " << children.at(i).command << " [Finished]" << endl;
-                                printProcStats(children.at(i).startTime);
-                                children.erase(children.begin() + i);
-                            }
-                        }
-                    }
-                    exit(0); //terminate program
+                    shutdown(&children);
                 }
                 else if (strncmp(argvNew[0], "cd", 2) == 0) //Parse out cd command
                 {
