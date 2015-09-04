@@ -87,7 +87,8 @@
  * normal shells allow for users to cycle through previously input commands
  * using the arrow keys. This shell does not support that. It also has a 
  * fixed prompt line, whereas most other shells allow users to customize
- * the prompt.
+ * the prompt. Finally, it does not allow me to cd to ~ to get to my home
+ * directory, which other shells usually allow.
  *
  *
  * @author Arthur Lockman <ajlockman@wpi.edu>
